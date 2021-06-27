@@ -1,12 +1,13 @@
-import telebot, requests, os, glob
+import telebot, requests, os, glob, req
 from api import API_TOKEN
 from PIL import Image
 from telebot import types
+from utils.logger import traceError
 
 last_cancel_menu = None # Сообщение с кнопкой отмены
 main_keyboard = None
 
-bot = telebot.TeleBot(API_TOKEN)
+bot = telebot.TeleBot(API_TOKEN, threaded=False)
 
 def removeImages():
   filelist = glob.glob(os.path.join(os.path.abspath('./stickers'), '*'))
@@ -16,15 +17,18 @@ def removeImages():
 @bot.message_handler(commands=['start'])
 def start_message(message):
   global main_keyboard
+  if message.chat.type != 'private':
+    bot.send_message(message.chat.id, 'Команда не работает в групповых чатах')
+    return
   types.ReplyKeyboardRemove()
-  
   main_keyboard = types.ReplyKeyboardMarkup()
   key_start = types.KeyboardButton(text='Рестарт')
   key_help = types.KeyboardButton(text='Помощь')
   key_sticker = types.KeyboardButton(text='Конвертация')
+  key_server = types.KeyboardButton(text='Статус сервера')
   # main keyboard (bot menu)
   main_keyboard.row(key_start, key_help)
-  main_keyboard.row(key_sticker)
+  main_keyboard.row(key_sticker, key_server)
   bot.send_message(message.chat.id, 'Привет дружок. Это тестовая версия бота. Он предназначен для вывода статуса сервера по майнкрафту команды Boston tea-party', reply_markup=main_keyboard)
 
 @bot.message_handler(commands=['help'])
@@ -41,16 +45,35 @@ def help_message(message):
 /start - запуск бота
 /help - помощь по работе с ботом
 /sticker - конвертация стикеров. После ввода команды отправляете боту любой стикер, он конвертирует его формат <code>png</code> или <code>gif</code>. 
+/server - вывода статуса сервера по майнкрафту
 """, parse_mode="HTML")
 
 @bot.message_handler(commands=['sticker'])
 def stickerMessage(message):
   global last_cancel_menu
-  keyboard = types.InlineKeyboardMarkup()
-  key_cancel = types.InlineKeyboardButton(text='Отмена', callback_data='cancel')
-  keyboard.add(key_cancel)
+  if message.chat.type != 'private':
+    bot.send_message(message.chat.id, 'Конвертация доступна только в личном чате с ботом @BTPMAlphaBot')
+    return
+  else:
+    keyboard = types.InlineKeyboardMarkup()
+    key_cancel = types.InlineKeyboardButton(text='Отмена', callback_data='cancel')
+    keyboard.add(key_cancel)
   last_cancel_menu = bot.send_message(message.chat.id, 'Конвертация стикеров. Отправь мне стикер который хочешь отсканировать и подожди некоторое время:', reply_markup=keyboard)
   bot.register_next_step_handler(message, convertSticker)
+  
+@bot.message_handler(content_types='new_chat_members')
+def newMember(message):
+  if message.json['new_chat_member']['id'] == 1765237381:
+    bot.send_message(message.chat.id, 'Здарова пидоры! Can I join your club?')
+  else:
+    bot.send_message(message.chat.id, 'welcome to the club buddy!')
+    video = open('./videoplayback.mp4', 'rb')
+    bot.send_video(message.chat.id, video)
+
+@bot.message_handler(commands=['server'])
+def serverStatus (message):
+  status = req.checkStatus()
+  bot.send_message(message.chat.id, status)
   
 @bot.callback_query_handler(func=lambda call: True)
 def callback_worker(call):
@@ -68,6 +91,8 @@ def textMessage(message):
     help_message(message)
   elif message.text == 'Конвертация':
     stickerMessage(message)
+  elif message.text == 'Статус сервера':
+    serverStatus(message)
   else:
     bot.send_message(message.chat.id, 'Поговорить? Это не ко мне а к @alexstrashiloff')
   
@@ -78,7 +103,7 @@ def convertSticker (message):
     try:
       file = requests.get('https://api.telegram.org/file/bot{0}/{1}'.format(API_TOKEN, file_info.file_path))
     except requests.RequestException as e:
-      print(e)
+      traceError(e)
       bot.send_message(message.chat.id, 'Извините, нет связи с серверами telegram, повторите попытку позже.')
       return
       
@@ -98,7 +123,7 @@ def convertSticker (message):
     try:
       bot.send_document(message.chat.id, open(new_images, 'rb'))
     except Exception:
-      print ('Ошибка при отправке файла /sticker')
+      traceError ('Ошибка при отправке файла /sticker')
       bot.send_message(message.chat.id, 'Произошла внутренняя ошибка, приносим свои извинения!')
     removeImages()
   else:
