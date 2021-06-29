@@ -1,5 +1,4 @@
 import telebot, requests, os, glob, req
-# from api import API_TOKEN
 from PIL import Image
 from telebot import types
 from utils.logger import traceError
@@ -8,7 +7,7 @@ from flask import Flask, request
 last_cancel_menu = None # Сообщение с кнопкой отмены
 main_keyboard = None
 
-API_TOKEN = os.environ.get('API_TOKEN', api.API_TOKEN)
+API_TOKEN = os.environ.get('API_TOKEN')
 bot = telebot.TeleBot(API_TOKEN, threaded=False)
 server = Flask(__name__)
 
@@ -103,6 +102,11 @@ def convertSticker (message):
   global last_cancel_menu
   if message.content_type == 'sticker':
     file_info = bot.get_file(message.sticker.file_id)
+    path = os.path.abspath + '/stikers'
+    print(path)
+    if not os.path.exists(path):
+      os.mkdir(path)
+      
     try:
       file = requests.get('https://api.telegram.org/file/bot{0}/{1}'.format(API_TOKEN, file_info.file_path))
     except requests.RequestException as e:
@@ -135,18 +139,17 @@ def convertSticker (message):
 
 @server.route('/' + API_TOKEN, methods=['POST'])
 def getMessage():
-    json_string = request.get_data().decode('utf-8')
-    update = telebot.types.Update.de_json(json_string)
-    bot.process_new_updates([update])
-    return "!", 200
+  json_string = request.get_data().decode('utf-8')
+  update = telebot.types.Update.de_json(json_string)
+  bot.process_new_updates([update])
+  return '!', 200
 
-@server.route("/")
+@server.route('/')
 def webhook():
-    bot.remove_webhook()
-    # bot.set_webhook(url='https://btpm-bot.herokuapp.com/' + API_TOKEN)
-    bot.set_webhook(url='https://btpm-bot.herokuapp.com/' + API_TOKEN)
-    return "!", 200
+  bot.remove_webhook()
+  bot.set_webhook(url='https://btpm-bot.herokuapp.com/' + API_TOKEN)
+  return '!', 200
 
-if __name__ == "__main__":
-  server.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
+if __name__ == '__main__':
+  server.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
 # bot.polling(none_stop=True)

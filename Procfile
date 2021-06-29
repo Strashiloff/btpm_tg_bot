@@ -1,1 +1,1 @@
-bot: python3 btpm_bot.py
+web: python3 btpm_bot.py
