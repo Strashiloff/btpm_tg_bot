@@ -128,9 +128,11 @@ def convertSticker (message):
       # image = image.convert('RGB')
       # new_images = target.replace('.webp', '.png')
       image.save(target+'/sticker.png', 'png')
+      new_images = target+'/sticker.png'
     elif target.find('.tgs') != -1:
-      new_images = target.replace('.tgs', '.gif')
-      os.system('lottie_convert.py --gif-skip-frames 4 {0} {1}'.format(target, new_images))
+      # new_images = target.replace('.tgs', '.gif')
+      # os.system('lottie_convert.py --gif-skip-frames 4 {0} {1}'.format(target, new_images))
+      pass
     else:
       bot.send_message(message.chat.id, 'Что это?? Я с таким не работаю')
       return
