@@ -1,13 +1,16 @@
 import telebot, requests, os, glob, req
-from api import API_TOKEN
+# from api import API_TOKEN
 from PIL import Image
 from telebot import types
 from utils.logger import traceError
+from flask import Flask, request
 
 last_cancel_menu = None # Сообщение с кнопкой отмены
 main_keyboard = None
 
+API_TOKEN = os.environ.get('API_TOKEN', api.API_TOKEN)
 bot = telebot.TeleBot(API_TOKEN, threaded=False)
+server = Flask(__name__)
 
 def removeImages():
   filelist = glob.glob(os.path.join(os.path.abspath('./stickers'), '*'))
@@ -130,4 +133,20 @@ def convertSticker (message):
     bot.send_message(message.chat.id, 'Извините это не стикер, повторите')
     bot.register_next_step_handler(message, convertSticker)
 
-bot.polling(none_stop=True)
+@server.route('/' + API_TOKEN, methods=['POST'])
+def getMessage():
+    json_string = request.get_data().decode('utf-8')
+    update = telebot.types.Update.de_json(json_string)
+    bot.process_new_updates([update])
+    return "!", 200
+
+@server.route("/")
+def webhook():
+    bot.remove_webhook()
+    # bot.set_webhook(url='https://btpm-bot.herokuapp.com/' + API_TOKEN)
+    bot.set_webhook(url='https://btpm-bot.herokuapp.com/' + API_TOKEN)
+    return "!", 200
+
+if __name__ == "__main__":
+  server.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
+# bot.polling(none_stop=True)
