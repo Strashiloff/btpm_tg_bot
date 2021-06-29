@@ -114,18 +114,20 @@ def convertSticker (message):
       bot.send_message(message.chat.id, 'Извините, нет связи с серверами telegram, повторите попытку позже.')
       return
     
-    target = os.path.abspath('.')  + '/' + file_info.file_path
+    target = ''
+    target = os.path.abspath('.')  + '/stickers/' # + file_info.file_path
     
-    doc = open(target, 'w+b')
-    print('|listdir|', os.listdir('.'))
-    doc.write(file.content)
-    doc.close()
+    # doc = open(target, 'wb')
+    # print('|listdir|', os.listdir('.'))
+    # doc.write(file.content)
+    # doc.close()
     
-    if target.find('.webp') != -1:
-      image = Image.open(target)
+    if file_info.file_path.find('.webp') != -1:
+      open(target+'/sticker.webp', 'wb').write(file.content)
+      image = Image.open(target+'/sticker.webp')
       # image = image.convert('RGB')
-      new_images = target.replace('.webp', '.png')
-      image.save(new_images, 'png')
+      # new_images = target.replace('.webp', '.png')
+      image.save(target+'/sticker.png', 'png')
     elif target.find('.tgs') != -1:
       new_images = target.replace('.tgs', '.gif')
       os.system('lottie_convert.py --gif-skip-frames 4 {0} {1}'.format(target, new_images))
