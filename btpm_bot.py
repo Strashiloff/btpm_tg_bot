@@ -116,8 +116,11 @@ def convertSticker (message):
     
     target = os.path.abspath('.')  + '/' + file_info.file_path
     
-    open(target, 'wb').write(file.content)
+    doc = open(target, 'wb')
     print('|listdir|', os.listdir('.'))
+    doc.write(file.content)
+    doc.close()
+    
     if target.find('.webp') != -1:
       image = Image.open(target)
       # image = image.convert('RGB')
