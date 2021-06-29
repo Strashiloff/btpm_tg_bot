@@ -113,16 +113,18 @@ def convertSticker (message):
       traceError(e)
       bot.send_message(message.chat.id, 'Извините, нет связи с серверами telegram, повторите попытку позже.')
       return
-      
-    open(file_info.file_path, 'wb').write(file.content)
-    if file_info.file_path.find('.webp') != -1:
-      image = Image.open(file_info.file_path)
+    
+    target = os.path.abspath('.')  + '/' + file_info.file_path
+    print (target)
+    open(target, 'wb').write(file.content)
+    if target.find('.webp') != -1:
+      image = Image.open(target)
       # image = image.convert('RGB')
-      new_images = file_info.file_path.replace('.webp', '.png')
+      new_images = target.replace('.webp', '.png')
       image.save(new_images, 'png')
-    elif file_info.file_path.find('.tgs') != -1:
-      new_images = file_info.file_path.replace('.tgs', '.gif')
-      os.system('lottie_convert.py --gif-skip-frames 4 {0} {1}'.format(file_info.file_path, new_images))
+    elif target.find('.tgs') != -1:
+      new_images = target.replace('.tgs', '.gif')
+      os.system('lottie_convert.py --gif-skip-frames 4 {0} {1}'.format(target, new_images))
     else:
       bot.send_message(message.chat.id, 'Что это?? Я с таким не работаю')
       return
