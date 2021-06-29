@@ -131,7 +131,7 @@ def convertSticker (message):
       new_images = target+'/sticker.png'
     elif target.find('.tgs') != -1:
       # new_images = target.replace('.tgs', '.gif')
-      # os.system('lottie_convert.py --gif-skip-frames 4 {0} {1}'.format(target, new_images))
+      os.system('lottie_convert.py --gif-skip-frames 4 {0} {1}'.format(target+'/sticker.tgs', target+'/sticker.gif'))
       pass
     else:
       bot.send_message(message.chat.id, 'Что это?? Я с таким не работаю')
@@ -142,7 +142,7 @@ def convertSticker (message):
     except Exception:
       traceError ('Ошибка при отправке файла /sticker')
       bot.send_message(message.chat.id, 'Произошла внутренняя ошибка, приносим свои извинения!')
-    removeImages()
+    # removeImages()
   else:
     bot.send_message(message.chat.id, 'Извините это не стикер, повторите')
     bot.register_next_step_handler(message, convertSticker)
