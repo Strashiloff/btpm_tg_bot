@@ -116,7 +116,7 @@ def convertSticker (message):
     
     target = os.path.abspath('.')  + '/' + file_info.file_path
     
-    doc = open(target, 'wb')
+    doc = open(target, 'w+b')
     print('|listdir|', os.listdir('.'))
     doc.write(file.content)
     doc.close()
