@@ -102,7 +102,7 @@ def convertSticker (message):
   global last_cancel_menu
   if message.content_type == 'sticker':
     file_info = bot.get_file(message.sticker.file_id)
-    path = os.path.abspath + '/stikers'
+    path = os.path.abspath('.') + '/stikers'
     print(path)
     if not os.path.exists(path):
       os.mkdir(path)
