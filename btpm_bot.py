@@ -123,17 +123,17 @@ def convertSticker (message):
     # doc.close()
     
     if file_info.file_path.find('.webp') != -1:
-      open(target+'/sticker.webp', 'wb').write(file.content)
-      image = Image.open(target+'/sticker.webp')
+      open(target+'sticker.webp', 'wb').write(file.content)
+      image = Image.open(target+'sticker.webp')
       # image = image.convert('RGB')
       # new_images = target.replace('.webp', '.png')
-      image.save(target+'/sticker.png', 'png')
-      new_images = target+'/sticker.png'
+      image.save(target+'sticker.png', 'png')
+      new_images = target+'sticker.png'
     elif file_info.file_path.find('.tgs') != -1:
       # new_images = target.replace('.tgs', '.gif')
-      print ('lottie_convert.py --gif-skip-frames 4 {0} {1}'.format(target+'/sticker.tgs', target+'/sticker.gif'))
-      os.system('lottie_convert.py --gif-skip-frames 4 {0} {1}'.format(target+'/sticker.tgs', target+'/sticker.gif'))
-      new_images = target+'/sticker.gif'
+      print ('lottie_convert.py --gif-skip-frames 4 {0} {1}'.format(target+'sticker.tgs', target+'sticker.gif'))
+      os.system('lottie_convert.py --gif-skip-frames 4 {0} {1}'.format(target+'sticker.tgs', target+'sticker.gif'))
+      new_images = target+'sticker.gif'
     else:
       bot.send_message(message.chat.id, 'Что это?? Я с таким не работаю')
       return
