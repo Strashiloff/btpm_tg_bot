@@ -1,6 +1,6 @@
-import requests, subprocess
+import requests, subprocess, json
 # from time import sleep
-from flask import Flask, request, jsonify
+from flask import Flask, request
 from flask_cors import CORS
 
 server = Flask(__name__)
@@ -9,12 +9,10 @@ CORS(server)
 def sendMyIpToHost():
   my_ip = subprocess.Popen(['curl', '-s', 'ifconfig.me/ip'], stdout=subprocess.PIPE)
   try:
-    requests.post('https://btpm-bot.herokuapp.com/setip', jsonify(ip=my_ip.stdout.readline().decode('utf-8')))
+    data = json.dumps({"ip": my_ip.stdout.readline().decode('utf-8')})
+    requests.post('https://https://btpm-bot.herokuapp.com/setip', data)
   except Exception as e:
     print(sendMyIpToHost, e)
-
-with server.app_context():
-  sendMyIpToHost()
 
 @server.route('/', methods=['GET', 'POST'])
 def requestFromVps():
