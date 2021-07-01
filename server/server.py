@@ -10,7 +10,7 @@ def sendMyIpToHost():
   my_ip = subprocess.Popen(['curl', '-s', 'ifconfig.me/ip'], stdout=subprocess.PIPE)
   try:
     data = json.dumps({"ip": my_ip.stdout.readline().decode('utf-8')})
-    requests.post('https://https://btpm-bot.herokuapp.com/setip', data)
+    requests.post('https://btpm-bot.herokuapp.com/setip', data)
   except Exception as e:
     print(sendMyIpToHost, e)
 
