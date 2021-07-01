@@ -8,7 +8,7 @@ last_cancel_menu = None # Сообщение с кнопкой отмены
 main_keyboard = None
 
 API_TOKEN = os.environ.get('API_TOKEN')
-bot = telebot.TeleBot(API_TOKEN, threaded=False)
+bot = telebot.TeleBot(API_TOKEN)
 server = Flask(__name__)
 
 def removeImages():
@@ -74,15 +74,16 @@ def newMember(message):
 
 @bot.message_handler(commands=['server'])
 def serverStatus (message):
+  send = bot.send_message(message.chat.id, 'Ожидание информации с сервера...')
   status = req.checkStatus()
-  bot.send_message(message.chat.id, status)
+  bot.edit_message_text(status, chat_id = message.chat.id, message_id = send.message_id, parse_mode='HTML')
+  # bot.send_message(message.chat.id,  status, parse_mode='HTML')
   
 @bot.callback_query_handler(func=lambda call: True)
 def callback_worker(call):
-  global last_cancel_menu
   if call.data == 'cancel':
     bot.clear_step_handler(call.message)
-    bot.edit_message_reply_markup(last_cancel_menu.chat.id, last_cancel_menu.message_id, reply_markup=None)
+    bot.edit_message_reply_markup(call.message.chat.id, call.message.json['message_id'], reply_markup=None)
     bot.send_message(call.message.chat.id, 'Вы отменили действие')
 
 @bot.message_handler(content_types=['text'])
@@ -113,24 +114,15 @@ def convertSticker (message):
       traceError(e)
       bot.send_message(message.chat.id, 'Извините, нет связи с серверами telegram, повторите попытку позже.')
       return
-    
-    target = ''
-    target = os.path.abspath('.')  + '/stickers/' # + file_info.file_path
-    
-    # doc = open(target, 'wb')
-    # print('|listdir|', os.listdir('.'))
-    # doc.write(file.content)
-    # doc.close()
+
+    target = os.path.abspath('.')  + '/stickers/'
     
     if file_info.file_path.find('.webp') != -1:
       open(target+'sticker.webp', 'wb').write(file.content)
       image = Image.open(target+'sticker.webp')
-      # image = image.convert('RGB')
-      # new_images = target.replace('.webp', '.png')
       image.save(target+'sticker.png', 'png')
       new_images = target+'sticker.png'
     elif file_info.file_path.find('.tgs') != -1:
-      # new_images = target.replace('.tgs', '.gif')
       open(target+'sticker.tgs', 'wb').write(file.content)
       # print ('lottie_convert.py --gif-skip-frames 4 {0} {1}'.format(target+'sticker.tgs', target+'sticker.gif'))
       os.system('lottie_convert.py {0} {1}'.format(target+'sticker.tgs', target+'sticker.gif'))
@@ -148,6 +140,11 @@ def convertSticker (message):
   else:
     bot.send_message(message.chat.id, 'Извините это не стикер, повторите')
     bot.register_next_step_handler(message, convertSticker)
+    
+@server.route('/setip', methods=['POST'])
+def setIp ():
+  json_string = request.get_data().decode('utf-8')
+  req.updateIp(json_string)
 
 @server.route('/' + API_TOKEN, methods=['POST'])
 def getMessage():
@@ -163,5 +160,7 @@ def webhook():
   return '!', 200
 
 if __name__ == '__main__':
+  # server.debug = True
+  # bot.polling(none_stop=True)
   server.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
-# bot.polling(none_stop=True)
+  
