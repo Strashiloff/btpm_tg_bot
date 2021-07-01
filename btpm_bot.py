@@ -145,6 +145,7 @@ def convertSticker (message):
 def setIp ():
   json_string = request.get_data().decode('utf-8')
   req.updateIp(json_string)
+  return '!', 200
 
 @server.route('/' + API_TOKEN, methods=['POST'])
 def getMessage():
