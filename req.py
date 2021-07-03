@@ -1,5 +1,6 @@
 import requests, os, json
 from utils.logger import traceError
+from flask import jsonify
 
 ip='192.168.31.76'
 
@@ -14,7 +15,9 @@ def checkStatus ():
   #
   DEST_IP = os.environ.get('DEST_IP', ip)
   url = 'http://{0}:8081/'.format(DEST_IP)
-  response = sendRequest(url)
+  error, response = sendRequest(url)
+  if error:
+    return response
   data = response.json()
   return """IP сервера: {0}
 Текущий статус сервера: <code>{1}</code>
@@ -27,7 +30,9 @@ def sendAdminCommand(command):
   global ip
   DEST_IP = os.environ.get('DEST_IP', ip)
   url = 'http://{0}:8081/command'.format(DEST_IP)
-  response = sendRequest(url, json.dumps({"command": command}))
+  error, response = sendRequest(url, json.dumps({"command": command}))
+  if error:
+    return response
   data = response.json()
   return data['text']
 
@@ -46,11 +51,11 @@ def sendRequest (url, data = ''):
     response = requests.post(url, data, timeout = 15)
   except requests.ConnectionError as e:
     traceError(checkStatus, e)
-    return 'Не удается подключиться к серверу, скорее всего он не доступен'
+    return True, 'Не удается подключиться к серверу, скорее всего он не доступен'
   except requests.Timeout or requests.ReadTimeout as e:
     traceError(checkStatus, e)
-    return 'Сервер не доступен или перегружен'
-  return response
+    return True, 'Сервер не доступен или перегружен'
+  return False, response
 
 def setNewAdmin (string_admin):
   target = os.path.abspath('.') + '/stickers/admin.txt'
@@ -92,26 +97,26 @@ def deleteAdmin(id_admin):
   
   if not id_admin.isdigit():
     return 'Ошибка, id неверен'
-  # try:
-  file_admins = open(target)
-  list_admins = file_admins.readlines()
-  file_admins.close()
-  find = None
-  for line in list_admins:
-    line_text = line.split(' ')
-    if int(line_text[0]) == int(id_admin):
-      find = line
-      if int(line_text[2]) == 2:
-        return 'Этого администратора нельзя удалить'
+  try:
+    file_admins = open(target)
+    list_admins = file_admins.readlines()
+    file_admins.close()
+    find = None
+    for line in list_admins:
+      line_text = line.split(' ')
+      if int(line_text[0]) == int(id_admin):
+        find = line
+        if int(line_text[2]) == 2:
+          return 'Этого администратора нельзя удалить'
+      
+    if find == None:
+      return 'Такого администратора нет'
     
-  if find == None:
-    return 'Такого администратора нет'
-  
-  list_admins.remove(find)
-  file_admins = open(target, 'w')
-  file_admins.writelines(list_admins)
-  file_admins.close()
-  # except Exception as e:
-  #   print(setNewAdmin, e)
-  #   return 'Произошла ошибка'
+    list_admins.remove(find)
+    file_admins = open(target, 'w')
+    file_admins.writelines(list_admins)
+    file_admins.close()
+  except Exception as e:
+    print(setNewAdmin, e)
+    return 'Произошла ошибка'
   return 'Администратор удален'
