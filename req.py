@@ -63,6 +63,9 @@ def setNewAdmin (string_admin):
   if len(string_args) != 3 or not string_args[0].isdigit() or not string_args[2].isdigit():
     return 'Ошибка в команде'
   
+  if int(string_args[2]) > 2 and int(string_args[2]) < 1:
+    return 'Чи шо, не таких прав доступа... есть только 1 и 2'
+  
   try:
     file_admin = open(target)
     list_string = file_admin.readlines()
