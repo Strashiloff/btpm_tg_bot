@@ -1,6 +1,6 @@
 import requests, subprocess, json
 # from time import sleep
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 server = Flask(__name__)
@@ -13,6 +13,8 @@ def sendMyIpToHost():
     requests.post('https://btpm-bot.herokuapp.com/setip', data)
   except Exception as e:
     print(sendMyIpToHost, e)
+    
+sendMyIpToHost()
 
 @server.route('/', methods=['GET', 'POST'])
 def requestFromVps():
@@ -37,6 +39,16 @@ def requestFromVps():
       online = online,
       players = players
     )
+    
+@server.route('/command', methods=['POST'])
+def requestFromVpsCommand ():
+  try:
+    json_data = json.loads(request.data)
+  except Exception as e:
+    print ('|||___|||', e)
+
+  text = executeCommand(json_data['command'])
+  return jsonify(text=text)
     
 def getServerStatus ():
   proc = subprocess.Popen(['./status.sh'], stdout=subprocess.PIPE)
@@ -67,3 +79,14 @@ def parsePlayers (array):
       players += arr[i]
       
   return online, players
+
+def executeCommand (command):
+  proc = subprocess.Popen(['./command.sh', command], stdout=subprocess.PIPE)
+  text = ''
+  while True:
+    line = proc.stdout.readline().decode('utf-8')
+    text += line
+    if not line:
+      break
+  
+  return text

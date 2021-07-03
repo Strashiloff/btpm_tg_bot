@@ -79,6 +79,26 @@ def serverStatus (message):
   bot.edit_message_text(status, chat_id = message.chat.id, message_id = send.message_id, parse_mode='HTML')
   # bot.send_message(message.chat.id,  status, parse_mode='HTML')
   
+@bot.message_handler(commands=['admin'])
+def adminCommand (message):
+  global last_cancel_menu
+  if message.chat.type != 'private':
+    return
+  ascess, rights = req.checkAdminRigthts(message.from_user.id)
+  if not ascess:
+    send = bot.send_message(message.chat.id, 'У вас не хватает прав')
+  else:  
+    keyboard = types.InlineKeyboardMarkup()
+    key_cancel = types.InlineKeyboardButton(text='Отмена', callback_data='cancel')
+    keyboard.add(key_cancel)
+    last_cancel_menu = bot.send_message(message.chat.id, """Отправьте команду (Ваш уровень доступа: {0})
+<code>command 'команда на сервер'</code> - выполнить команду на сервере майнкрафт (уровень доступа 1)
+<code>add 'id_user'</code> - добавить админа (уровень доступа 2)
+<code>list</code> - список админов (уровень доступа 1)
+<code>delete 'id_user'</code> - удалить админа (уровень доступа 2)
+""".format(rights), parse_mode='HTML', reply_markup=keyboard)
+    bot.register_next_step_handler(message, getAdminCommand)
+  
 @bot.callback_query_handler(func=lambda call: True)
 def callback_worker(call):
   if call.data == 'cancel':
@@ -141,6 +161,30 @@ def convertSticker (message):
     bot.send_message(message.chat.id, 'Извините это не стикер, повторите')
     bot.register_next_step_handler(message, convertSticker)
     
+def getAdminCommand(message):
+  global last_cancel_menu
+  text = str(message.text)
+  command = text.replace(' ', '|', 1).split('|', maxsplit=1)
+  if command[0] == 'command':
+    text = req.sendAdminCommand(command[1])
+    bot.send_message(message.chat.id, text)
+    bot.edit_message_reply_markup(last_cancel_menu.chat.id, last_cancel_menu.message_id, reply_markup=None)
+  elif command[0] == 'add':
+    text = req.setNewAdmin(command[1])
+    bot.send_message(message.chat.id, text)
+    bot.edit_message_reply_markup(last_cancel_menu.chat.id, last_cancel_menu.message_id, reply_markup=None)
+  elif command[0] == 'list':
+    text = req.showListAdmins()
+    bot.send_message(message.chat.id, text)
+    bot.edit_message_reply_markup(last_cancel_menu.chat.id, last_cancel_menu.message_id, reply_markup=None)
+  elif command[0] == 'delete':
+    text = req.deleteAdmin(command[1])
+    bot.send_message(message.chat.id, text)
+    bot.edit_message_reply_markup(last_cancel_menu.chat.id, last_cancel_menu.message_id, reply_markup=None)
+  else:
+    bot.edit_message_reply_markup(last_cancel_menu.chat.id, last_cancel_menu.message_id, reply_markup=None)
+    bot.send_message(message.chat.id, 'Команда не распознана')
+  
 @server.route('/setip', methods=['POST'])
 def setIp ():
   json_string = request.get_data().decode('utf-8')
