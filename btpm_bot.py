@@ -116,8 +116,8 @@ def textMessage(message):
     stickerMessage(message)
   elif message.text == 'Статус сервера':
     serverStatus(message)
-  else:
-    bot.send_message(message.chat.id, 'Поговорить? Это не ко мне а к @alexstrashiloff')
+  # else:
+  #   bot.send_message(message.chat.id, 'Поговорить? Это не ко мне а к @alexstrashiloff')
   
 def convertSticker (message):
   global last_cancel_menu
@@ -178,7 +178,7 @@ def getAdminCommand(message):
     bot.send_message(message.chat.id, text)
     bot.edit_message_reply_markup(last_cancel_menu.chat.id, last_cancel_menu.message_id, reply_markup=None)
   elif command[0] == 'delete':
-    text = req.deleteAdmin(command[1])
+    text = req.deleteAdmin(command[1], message.from_user.id)
     bot.send_message(message.chat.id, text)
     bot.edit_message_reply_markup(last_cancel_menu.chat.id, last_cancel_menu.message_id, reply_markup=None)
   else:

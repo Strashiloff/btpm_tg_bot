@@ -4,7 +4,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 server = Flask(__name__)
-CORS(server)
+# CORS(server)
 
 def sendMyIpToHost():
   my_ip = subprocess.Popen(['curl', '-s', 'ifconfig.me/ip'], stdout=subprocess.PIPE)

@@ -95,7 +95,7 @@ def showListAdmins ():
     return 'Произошла ошибка'
   return ''.join(list_admins)
 
-def deleteAdmin(id_admin):
+def deleteAdmin(id_admin, your_id):
   target = os.path.abspath('.') + '/stickers/admin.txt'
   
   if not id_admin.isdigit():
@@ -109,7 +109,7 @@ def deleteAdmin(id_admin):
       line_text = line.split(' ')
       if int(line_text[0]) == int(id_admin):
         find = line
-        if int(line_text[2]) == 2:
+        if int(line_text[2]) == 2 and int(your_id) != 93812289:
           return 'Этого администратора нельзя удалить'
       
     if find == None:
