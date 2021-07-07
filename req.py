@@ -81,8 +81,9 @@ def setNewAdmin (string_admin):
         return '{0} уже является администратором'.format(string_args[1])
       
     file_admin.close()
-    file_admin = open(target, 'a')
-    file_admin.write(string_admin)
+    list_string.append(string_admin)
+    file_admin = open(target, 'w')
+    file_admin.writelines(list_string)
     file_admin.close()
   except Exception as e:
     print(setNewAdmin, e)
