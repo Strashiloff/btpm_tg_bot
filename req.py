@@ -2,7 +2,7 @@ import requests, os, json
 from utils.logger import traceError
 from flask import jsonify
 
-ip='192.168.31.76'
+ip='192.168.31.162'
 
 def updateIp(ip_new):
   DEST_IP = os.environ.get('DEST_IP', '')
@@ -50,7 +50,7 @@ def checkAdminRigthts(id_user):
     words = line.split(' ')
     if int(words[0]) == int(id_user):
       return True, int(words[2].replace('\n', ''))
-  return False
+  return False, -1
 
 def sendRequest (url, data = ''):
   try:
@@ -75,15 +75,17 @@ def setNewAdmin (string_admin):
   try:
     file_admin = open(target)
     list_string = file_admin.readlines()
+    list_admins_new = list()
     for line in list_string:
+      list_admins_new.append(line.replace('\n', '') + '\n')
       str_row = line.split(' ')
       if int(str_row[0]) == int(string_args[0]):
         return '{0} уже является администратором'.format(string_args[1])
       
     file_admin.close()
-    list_string.append(string_admin)
+    list_admins_new.append(string_admin)
     file_admin = open(target, 'w')
-    file_admin.writelines(list_string)
+    file_admin.writelines(list_admins_new)
     file_admin.close()
   except Exception as e:
     print(setNewAdmin, e)
