@@ -10,7 +10,7 @@ def updateIp(ip_new):
     os.environ.setdefault('DEST_IP', ip_new)
     ip = ip_new
   
-def checkStatus ():
+def checkStatus (id_user):
   global ip
   #
   DEST_IP = os.environ.get('DEST_IP', ip)
@@ -24,7 +24,13 @@ def checkStatus ():
 Майнкрафт: <code>{2}</code>
 Игроков онлайн: <b>{3}</b>
 Ники игроков онлайн: <b>{4}</b>
-""".format(data['ip'], data['status'], data['minecraft'], data['online'], data['players'])
+""".format(renderIP(id_user, data['ip']), data['status'], data['minecraft'], data['online'], data['players'])
+
+def renderIP (id_user, ip):
+  rigth, level = checkAdminRigthts(id_user)
+  if rigth:
+    return ip
+  return "у вас не доступа к этой информации"
 
 def sendAdminCommand(command):
   global ip

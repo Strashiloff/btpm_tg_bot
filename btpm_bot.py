@@ -75,7 +75,7 @@ def newMember(message):
 @bot.message_handler(commands=['server'])
 def serverStatus (message):
   send = bot.send_message(message.chat.id, 'Ожидание информации с сервера...')
-  status = req.checkStatus()
+  status = req.checkStatus(message.from_user.id)
   bot.edit_message_text(status, chat_id = message.chat.id, message_id = send.message_id, parse_mode='HTML')
   # bot.send_message(message.chat.id,  status, parse_mode='HTML')
   
