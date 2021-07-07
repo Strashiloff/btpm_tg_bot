@@ -93,7 +93,7 @@ def adminCommand (message):
     keyboard.add(key_cancel)
     last_cancel_menu = bot.send_message(message.chat.id, """Отправьте команду (Ваш уровень доступа: {0})
 <code>command 'команда на сервер'</code> - выполнить команду на сервере майнкрафт (уровень доступа 1)
-<code>add 'id_user'</code> - добавить админа (уровень доступа 2)
+<code>add 'id_user' 'username' 'rigth'</code> - добавить админа (rigth = [0-2]) (уровень доступа 2)
 <code>list</code> - список админов (уровень доступа 1)
 <code>delete 'id_user'</code> - удалить админа (уровень доступа 2)
 """.format(rights), parse_mode='HTML', reply_markup=keyboard)
