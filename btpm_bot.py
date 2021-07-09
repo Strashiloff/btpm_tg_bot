@@ -76,7 +76,12 @@ def newMember(message):
 def serverStatus (message):
   send = bot.send_message(message.chat.id, 'Ожидание информации с сервера...')
   status = req.checkStatus(message.from_user.id)
-  bot.edit_message_text(status, chat_id = message.chat.id, message_id = send.message_id, parse_mode='HTML')
+  time_string = """\nРежим работы:
+Пн - Вс
+С 10:00 - 12:00 (МСК)
+До 21:00 - 23:00 (МСК)
+Возможны периоды отключения"""
+  bot.edit_message_text(status + time_string, chat_id = message.chat.id, message_id = send.message_id, parse_mode='HTML')
   # bot.send_message(message.chat.id,  status, parse_mode='HTML')
   
 @bot.message_handler(commands=['admin'])
