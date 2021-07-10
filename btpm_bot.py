@@ -65,25 +65,32 @@ def stickerMessage(message):
   
 @bot.message_handler(content_types='new_chat_members')
 def newMember(message):
-  if message.json['new_chat_member']['id'] == 1765237381:
-    bot.send_message(message.chat.id, 'Здарова пидоры! Can I join your club?')
+  if message.chat.id == -1001221265428:
+    if message.json['new_chat_member']['id'] == 1765237381:
+      bot.send_message(message.chat.id, 'Здарова пидоры! Can I join your club?')
+    else:
+      bot.send_message(message.chat.id, 'welcome to the club buddy!')
+      video = open('./videoplayback.mp4', 'rb')
+      bot.send_video(message.chat.id, video)
   else:
-    bot.send_message(message.chat.id, 'welcome to the club buddy!')
-    video = open('./videoplayback.mp4', 'rb')
-    bot.send_video(message.chat.id, video)
+    bot.send_message(message.chat.id, 'Привет!')
 
 @bot.message_handler(commands=['server'])
 def serverStatus (message):
   send = bot.send_message(message.chat.id, 'Ожидание информации с сервера...')
   status = req.checkStatus(message.from_user.id)
-  time_string = """\nРежим работы:
+  bot.edit_message_text(status, chat_id = message.chat.id, message_id = send.message_id, parse_mode='HTML')
+  # bot.send_message(message.chat.id,  status, parse_mode='HTML')
+
+@bot.message_handler(commands=['time'])
+def serverTime (message):
+  time_string = """Режим работы:
 Пн - Вс
 С 10:00 - 12:00 (МСК)
 До 21:00 - 23:00 (МСК)
-Возможны периоды отключения"""
-  bot.edit_message_text(status + time_string, chat_id = message.chat.id, message_id = send.message_id, parse_mode='HTML')
-  # bot.send_message(message.chat.id,  status, parse_mode='HTML')
-  
+"""
+  bot.send_message(message.chat.id, time_string, parse_mode='HTML')
+
 @bot.message_handler(commands=['admin'])
 def adminCommand (message):
   global last_cancel_menu

@@ -20,8 +20,8 @@ def checkStatus (id_user):
     return response
   data = response.json()
   return """IP сервера: {0}
-Текущий статус сервера: <code>{1}</code>
-Майнкрафт: <code>{2}</code>
+Статус хоста: <code>{1}</code>
+Майнкрафт сервер: <code>{2}</code>
 Игроков онлайн: <b>{3}</b>
 Ники игроков онлайн: <b>{4}</b>
 """.format(renderIP(id_user, data['ip']), data['status'], data['minecraft'], data['online'], data['players'])

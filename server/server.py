@@ -34,7 +34,7 @@ def requestFromVps():
     # sleep(11)
     return jsonify(
       ip = ip,
-      status = 'Active',
+      status = 'Online',
       minecraft = minecraft,
       online = online,
       players = players
