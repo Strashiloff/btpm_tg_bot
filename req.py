@@ -1,8 +1,11 @@
-import requests, os, json
+import requests, os, json, utils.parser as parser
 from utils.logger import traceError
 from flask import jsonify
+from mcrcon import MCRcon, MCRconException
 
 ip='192.168.31.162'
+PASS_SERV = os.environ.get('RCON_PASS')
+mcron = None
 
 def updateIp(ip_new):
   DEST_IP = os.environ.get('DEST_IP', '')
@@ -12,19 +15,34 @@ def updateIp(ip_new):
   
 def checkStatus (id_user):
   global ip
-  #
+  error, response = sendCommand()
   DEST_IP = os.environ.get('DEST_IP', ip)
-  url = 'http://{0}:8081/'.format(DEST_IP)
-  error, response = sendRequest(url)
+  rigth, level = checkAdminRigthts(id_user)
+  text = ''
+  
+  if response.find('перегружен') != -1:
+    text = """IP сервера: {0}
+Майнкрафт сервер: <code>{1}</code>
+""".format(renderIP(id_user, DEST_IP), 'offline')
+    if level > 1:
+      text += '\n' + response
+    return text
+  
   if error:
-    return response
-  data = response.json()
+    text = """Последний IP сервера: {0}
+Майнкрафт сервер: <code>{1}</code>
+""".format(renderIP(id_user, DEST_IP), 'offline')
+    if level > 0:
+      text += '\n' + response
+    return text
+
+  online, players = parser.parsePlayers(response)
+  
   return """IP сервера: {0}
-Статус хоста: <code>{1}</code>
-Майнкрафт сервер: <code>{2}</code>
-Игроков онлайн: <b>{3}</b>
-Ники игроков онлайн: <b>{4}</b>
-""".format(renderIP(id_user, data['ip']), data['status'], data['minecraft'], data['online'], data['players'])
+Майнкрафт сервер: <code>{1}</code>
+Игроков онлайн: <b>{2}</b>
+Ники игроков онлайн: <b>{3}</b>
+""".format(renderIP(id_user, DEST_IP), 'online', online, players)
 
 def renderIP (id_user, ip):
   rigth, level = checkAdminRigthts(id_user)
@@ -32,15 +50,18 @@ def renderIP (id_user, ip):
     return ip
   return "у вас не доступа к этой информации"
 
-def sendAdminCommand(command):
+def sendAdminCommand(command, id_user):
   global ip
   DEST_IP = os.environ.get('DEST_IP', ip)
-  url = 'http://{0}:8081/command'.format(DEST_IP)
-  error, response = sendRequest(url, json.dumps({"command": command}))
+  rigth, level = checkAdminRigthts(id_user)
+  error, response = sendCommand(command)
+  
   if error:
-    return response
-  data = response.json()
-  return data['text']
+    text = 'Майнкрафт не запущен'
+    if level > 1:
+      text += '\n' + response
+    return text
+  return response
 
 def checkAdminRigthts(id_user):
   target = os.path.abspath('.')  + '/stickers/admin.txt'
@@ -52,15 +73,21 @@ def checkAdminRigthts(id_user):
       return True, int(words[2].replace('\n', ''))
   return False, -1
 
-def sendRequest (url, data = ''):
+def sendCommand (command = 'list'):
+  global ip, PASS_SERV
+  IP_SERV = os.environ.get('DEST_IP', ip)
+  response = ''
+  mcron = MCRcon(IP_SERV, PASS_SERV)
   try:
-    response = requests.post(url, data, timeout = 15)
-  except requests.ConnectionError as e:
-    traceError(checkStatus, e)
-    return True, 'Не удается подключиться к серверу, скорее всего он не доступен'
-  except requests.Timeout or requests.ReadTimeout as e:
-    traceError(checkStatus, e)
-    return True, 'Сервер не доступен или перегружен'
+    mcron.connect()
+    response = mcron.command(command)
+    mcron.disconnect()
+  except ConnectionRefusedError as e:
+    traceError(sendCommand, e)
+    return True, 'Хост доступен, майнкрафт не запущен'
+  except Exception as e:
+    traceError(sendCommand, e)
+    return True, 'Сервер выключен'
   return False, response
 
 def setNewAdmin (string_admin):

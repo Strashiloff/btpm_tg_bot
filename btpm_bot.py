@@ -28,6 +28,7 @@ def start_message(message):
   key_help = types.KeyboardButton(text='Помощь')
   key_sticker = types.KeyboardButton(text='Конвертация')
   key_server = types.KeyboardButton(text='Статус сервера')
+  key_time = types.KeyboardButton(text='Расписание')
   # main keyboard (bot menu)
   main_keyboard.row(key_start, key_help)
   main_keyboard.row(key_sticker, key_server)
@@ -128,6 +129,8 @@ def textMessage(message):
     stickerMessage(message)
   elif message.text == 'Статус сервера':
     serverStatus(message)
+  elif message.text == 'Расписание':
+    serverTime(message)
   # else:
   #   bot.send_message(message.chat.id, 'Поговорить? Это не ко мне а к @alexstrashiloff')
   
@@ -178,7 +181,7 @@ def getAdminCommand(message):
   text = str(message.text)
   command = text.replace(' ', '|', 1).split('|', maxsplit=1)
   if command[0] == 'command':
-    text = req.sendAdminCommand(command[1])
+    text = req.sendAdminCommand(command[1], message.from_user.id)
     bot.send_message(message.chat.id, text)
     bot.edit_message_reply_markup(last_cancel_menu.chat.id, last_cancel_menu.message_id, reply_markup=None)
   elif command[0] == 'add':
