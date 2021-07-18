@@ -30,8 +30,8 @@ def start_message(message):
   key_server = types.KeyboardButton(text='Статус сервера')
   key_time = types.KeyboardButton(text='Расписание')
   # main keyboard (bot menu)
+  main_keyboard.row(key_sticker, key_server, key_time)
   main_keyboard.row(key_start, key_help)
-  main_keyboard.row(key_sticker, key_server)
   bot.send_message(message.chat.id, 'Привет дружок. Это тестовая версия бота. Он предназначен для вывода статуса сервера по майнкрафту команды Boston tea-party', reply_markup=main_keyboard)
 
 @bot.message_handler(commands=['help'])
