@@ -48,13 +48,16 @@ def renderIP (id_user, ip):
   rigth, level = checkAdminRigthts(id_user)
   if rigth:
     return ip
-  return "у вас не доступа к этой информации"
+  return 'у вас не доступа к этой информации'
 
 def sendAdminCommand(command, id_user):
   global ip
   DEST_IP = os.environ.get('DEST_IP', ip)
   rigth, level = checkAdminRigthts(id_user)
-  error, response = sendCommand(command)
+  if level > 0:
+    error, response = sendCommand(command)
+  else:
+    return 'у вас недостаточно прав'
   
   if error:
     text = 'Майнкрафт не запущен'
@@ -90,14 +93,18 @@ def sendCommand (command = 'list'):
     return True, 'Сервер выключен'
   return False, response
 
-def setNewAdmin (string_admin):
+def setNewAdmin (string_admin, id_user):
   target = os.path.abspath('.') + '/stickers/admin.txt'
   string_args = string_admin.split(' ')
-  if len(string_args) != 3 or not string_args[0].isdigit() or not string_args[2].isdigit():
-    return 'Ошибка в команде'
   
-  if int(string_args[2]) > 2 and int(string_args[2]) < 1:
-    return 'Чи шо, не таких прав доступа... есть только 1 и 2'
+  rights, level = checkAdminRigthts(id_user)
+  
+  if (level < 2):
+    return 'У вас недостаточно прав доступа.'
+  
+  resp = checkErrorAdmin(string_admin)
+  if resp != None:
+    return resp
   
   try:
     file_admin = open(target)
@@ -107,7 +114,7 @@ def setNewAdmin (string_admin):
       list_admins_new.append(line.replace('\n', '') + '\n')
       str_row = line.split(' ')
       if int(str_row[0]) == int(string_args[0]):
-        return '{0} уже является администратором'.format(string_args[1])
+        return '{0} уже является администратором.'.format(string_args[1])
       
     file_admin.close()
     list_admins_new.append(string_admin)
@@ -116,9 +123,42 @@ def setNewAdmin (string_admin):
     file_admin.close()
   except Exception as e:
     print(setNewAdmin, e)
-    return 'Произошла ошибка'
+    return 'Произошла ошибка.'
     
-  return 'Новый администратор добавлен'
+  return 'Новый администратор добавлен.'
+
+def checkErrorAdmin(admins):
+  arr_str = admins.split('\n')
+  for i, string in enumerate(arr_str):
+    string_args = string.split(' ')
+    if len(string_args) != 3 or not string_args[0].isdigit() or not string_args[2].isdigit():
+      return 'Ошибка в команде (строка ' + (i+1) + ')'
+  
+    if int(string_args[2]) > 2 and int(string_args[2]) < 1:
+      return 'Чи шо, не таких прав доступа... есть только 0, 1 и 2 (строка ' + (i+1) + ')'
+    
+  return None
+
+def addAdminList (list_admins, id_user):
+  rights, level = checkAdminRigthts(id_user)
+  
+  if (level < 2):
+    return 'У вас недостаточно прав доступа.'
+  
+  resp = checkErrorAdmin(list_admins)
+  if resp != None:
+    return resp
+  
+  target = os.path.abspath('.') + '/stickers/admin.txt'
+  try:
+    file_admin = open(target, 'w')
+    file_admin.writelines(list_admins)
+    file_admin.close()
+  except Exception as e:
+    print(addAdminList, e)
+    return 'Произошла ошибка.'
+    
+  return 'Список администраторов обновлен.'
 
 def showListAdmins ():
   target = os.path.abspath('.') + '/stickers/admin.txt'
@@ -127,15 +167,20 @@ def showListAdmins ():
     list_admins = file_admins.readlines()
     file_admins.close()
   except Exception as e:
-    print(setNewAdmin, e)
-    return 'Произошла ошибка'
+    print(showListAdmins, e)
+    return 'Произошла ошибка.'
   return ''.join(list_admins)
 
-def deleteAdmin(id_admin, your_id):
+def deleteAdmin(id_admin, id_user):
   target = os.path.abspath('.') + '/stickers/admin.txt'
   
+  rights, level = checkAdminRigthts(id_user)
+  
+  if (level < 2):
+    return 'У вас недостаточно прав допступа.'
+  
   if not id_admin.isdigit():
-    return 'Ошибка, id неверен'
+    return 'Ошибка, id неверен.'
   try:
     file_admins = open(target)
     list_admins = file_admins.readlines()
@@ -145,17 +190,17 @@ def deleteAdmin(id_admin, your_id):
       line_text = line.split(' ')
       if int(line_text[0]) == int(id_admin):
         find = line
-        if int(line_text[2]) == 2 and int(your_id) != 93812289:
-          return 'Этого администратора нельзя удалить'
+        if int(line_text[2]) == 2 and int(id_user) != 93812289:
+          return 'Этого администратора нельзя удалить.'
       
     if find == None:
-      return 'Такого администратора нет'
+      return 'Такого администратора нет.'
     
     list_admins.remove(find)
     file_admins = open(target, 'w')
     file_admins.writelines(list_admins)
     file_admins.close()
   except Exception as e:
-    print(setNewAdmin, e)
-    return 'Произошла ошибка'
-  return 'Администратор удален'
+    print(deleteAdmin, e)
+    return 'Произошла ошибка.'
+  return 'Администратор удален.'

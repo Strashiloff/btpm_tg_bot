@@ -10,7 +10,9 @@ main_keyboard = None
 API_TOKEN = os.environ.get('API_TOKEN')
 bot = telebot.TeleBot(API_TOKEN)
 server = Flask(__name__)
-
+channel_id_test = -1001205501799
+channel_id = -1001544057022
+ 
 def removeImages():
   filelist = glob.glob(os.path.join(os.path.abspath('./stickers'), '*'))
   for f in filelist:
@@ -20,7 +22,7 @@ def removeImages():
 def start_message(message):
   global main_keyboard
   if message.chat.type != 'private':
-    bot.send_message(message.chat.id, 'Команда не работает в групповых чатах')
+    bot.send_message(message.chat.id, 'Команда не работает в групповых чатах.')
     return
   types.ReplyKeyboardRemove()
   main_keyboard = types.ReplyKeyboardMarkup()
@@ -29,26 +31,31 @@ def start_message(message):
   key_sticker = types.KeyboardButton(text='Конвертация')
   key_server = types.KeyboardButton(text='Статус сервера')
   key_time = types.KeyboardButton(text='Расписание')
-  # main keyboard (bot menu)
+  key_admin = types.KeyboardButton('/admin')
+  rigths, level = req.checkAdminRigthts(message.from_user.id)
   main_keyboard.row(key_sticker, key_server, key_time)
-  main_keyboard.row(key_start, key_help)
-  bot.send_message(message.chat.id, 'Привет дружок. Это тестовая версия бота. Он предназначен для вывода статуса сервера по майнкрафту команды Boston tea-party', reply_markup=main_keyboard)
+  if rigths:
+    main_keyboard.row(key_start, key_help, key_admin)
+  else:
+    main_keyboard.row(key_start, key_help)
+  bot.send_message(message.chat.id, 'Привет дружок. Бот предназначен для вывода статуса сервера по майнкрафту команды Boston tea-party.', reply_markup=main_keyboard)
 
 @bot.message_handler(commands=['help'])
 def help_message(message):
   bot.send_message(message.chat.id, """
 <code>BostonTeaParty-Alpha-bot</code> создан для целей самообразования и развлечения.
 
-<b>Основной задачей</b> бота будет вывод статуса сервера по майнкрафту для крутых ребят из Boston tea-party (в разработке) 
-и дополнительно для конвертации стикеров из форматов ТГ в более унифицированные (анимированные стикеры конвертируются с визуальными деффектами из-за сторонней библиотеки)
+<b>Основное назначение</b> бота - это вывод статуса сервера по майнкрафту для крутых ребят из Boston tea-party и дополнительно для конвертации стикеров из форматов ТГ в более унифицированные (анимированные стикеры конвертируются с визуальными деффектами из-за сторонней библиотеки)
 
-По всем вопросам и предложениям @alexstrashiloff
+По всем вопросам, предложениям и за получением ip сервера обращаться к @alexstrashiloff
 
 <b>Основые команды</b>:
 /start - запуск бота
 /help - помощь по работе с ботом
 /sticker - конвертация стикеров. После ввода команды отправляете боту любой стикер, он конвертирует его формат <code>png</code> или <code>gif</code>. 
 /server - вывода статуса сервера по майнкрафту
+/time - время работы сервера
+/keyboard - удалить кнопочную клавиатуру, вернуть её можно с помощью команды /start.
 """, parse_mode="HTML")
 
 @bot.message_handler(commands=['sticker'])
@@ -63,6 +70,10 @@ def stickerMessage(message):
     keyboard.add(key_cancel)
   last_cancel_menu = bot.send_message(message.chat.id, 'Конвертация стикеров. Отправь мне стикер который хочешь отсканировать и подожди некоторое время:', reply_markup=keyboard)
   bot.register_next_step_handler(message, convertSticker)
+  
+@bot.message_handler(commands=['keyboard'])
+def deleteKeyboard(message):
+  bot.send_message(message.chat.id, 'Клавиатура удалена.', reply_markup=types.ReplyKeyboardRemove())
   
 @bot.message_handler(content_types='new_chat_members')
 def newMember(message):
@@ -104,11 +115,12 @@ def adminCommand (message):
     keyboard = types.InlineKeyboardMarkup()
     key_cancel = types.InlineKeyboardButton(text='Отмена', callback_data='cancel')
     keyboard.add(key_cancel)
-    last_cancel_menu = bot.send_message(message.chat.id, """Отправьте команду (Ваш уровень доступа: {0})
-<code>command 'команда на сервер'</code> - выполнить команду на сервере майнкрафт (уровень доступа 1)
-<code>add 'id_user' 'username' 'rigth'</code> - добавить админа (rigth = [0-2]) (уровень доступа 2)
-<code>list</code> - список админов (уровень доступа 1)
-<code>delete 'id_user'</code> - удалить админа (уровень доступа 2)
+    last_cancel_menu = bot.send_message(message.chat.id, """Отправьте команду (<i>Ваш уровень доступа</i>: <b>{0}</b>)
+<code>command 'команда на сервер'</code> - выполнить команду на сервере майнкрафт (<i>уровень доступа</i> 1)
+<code>add 'id_user' 'username' 'rigth'</code> - добавить админа (rigth = [0-2]) (<i>уровень доступа</i> 2)
+<code>rewrite 'список администраторов'</code> - полностью перезаписать список администарторов (<i>уровень доступа</i> 2)
+<code>list</code> - список администраторов (<i>уровень доступа</i> 0)
+<code>delete 'id_user'</code> - удалить админа (<i>уровень доступа</i> 2)
 """.format(rights), parse_mode='HTML', reply_markup=keyboard)
     bot.register_next_step_handler(message, getAdminCommand)
   
@@ -117,7 +129,7 @@ def callback_worker(call):
   if call.data == 'cancel':
     bot.clear_step_handler(call.message)
     bot.edit_message_reply_markup(call.message.chat.id, call.message.json['message_id'], reply_markup=None)
-    bot.send_message(call.message.chat.id, 'Вы отменили действие')
+    bot.send_message(call.message.chat.id, 'Вы отменили действие.')
 
 @bot.message_handler(content_types=['text'])
 def textMessage(message):
@@ -131,9 +143,9 @@ def textMessage(message):
     serverStatus(message)
   elif message.text == 'Расписание':
     serverTime(message)
-  # else:
+  else:
+    print(message.forward_from_chat)
   #   bot.send_message(message.chat.id, 'Поговорить? Это не ко мне а к @alexstrashiloff')
-  
 def convertSticker (message):
   global last_cancel_menu
   if message.content_type == 'sticker':
@@ -163,17 +175,17 @@ def convertSticker (message):
       os.system('lottie_convert.py {0} {1}'.format(target+'sticker.tgs', target+'sticker.gif'))
       new_images = target+'sticker.gif'
     else:
-      bot.send_message(message.chat.id, 'Что это?? Я с таким не работаю')
+      bot.send_message(message.chat.id, 'Что это?? Я с таким не работаю.')
       return
     bot.edit_message_reply_markup(last_cancel_menu.chat.id, last_cancel_menu.message_id, reply_markup=None)
     try:
       bot.send_document(message.chat.id, open(new_images, 'rb'))
     except Exception:
-      traceError ('Ошибка при отправке файла /sticker')
+      traceError ('Ошибка при отправке файла /sticker.')
       bot.send_message(message.chat.id, 'Произошла внутренняя ошибка, приносим свои извинения!')
     # removeImages()
   else:
-    bot.send_message(message.chat.id, 'Извините это не стикер, повторите')
+    bot.send_message(message.chat.id, 'Извините это не стикер, повторите.')
     bot.register_next_step_handler(message, convertSticker)
     
 def getAdminCommand(message):
@@ -185,7 +197,7 @@ def getAdminCommand(message):
     bot.send_message(message.chat.id, text)
     bot.edit_message_reply_markup(last_cancel_menu.chat.id, last_cancel_menu.message_id, reply_markup=None)
   elif command[0] == 'add':
-    text = req.setNewAdmin(command[1])
+    text = req.setNewAdmin(command[1], message.from_user.id)
     bot.send_message(message.chat.id, text)
     bot.edit_message_reply_markup(last_cancel_menu.chat.id, last_cancel_menu.message_id, reply_markup=None)
   elif command[0] == 'list':
@@ -196,14 +208,25 @@ def getAdminCommand(message):
     text = req.deleteAdmin(command[1], message.from_user.id)
     bot.send_message(message.chat.id, text)
     bot.edit_message_reply_markup(last_cancel_menu.chat.id, last_cancel_menu.message_id, reply_markup=None)
+  elif command[0] == 'rewrite':
+    text = req.addAdminList(command[1], message.from_user.id)
+    bot.send_message(message.chat.id, text)
+    bot.edit_message_reply_markup(last_cancel_menu.chat.id, last_cancel_menu.message_id, reply_markup=None)
   else:
     bot.edit_message_reply_markup(last_cancel_menu.chat.id, last_cancel_menu.message_id, reply_markup=None)
-    bot.send_message(message.chat.id, 'Команда не распознана')
+    bot.send_message(message.chat.id, 'Команда не распознана.')
   
 @server.route('/setip', methods=['POST'])
 def setIp ():
   json_string = request.get_data().decode('utf-8')
   req.updateIp(json_string)
+  return '!', 200
+
+@server.route('/status', methods=['POST'])
+def updateStatusChannel():
+  global channel_id
+  json_string = request.get_data().decode('utf-8')
+  bot.send_message(channel_id, json_string['status'])
   return '!', 200
 
 @server.route('/' + API_TOKEN, methods=['POST'])
