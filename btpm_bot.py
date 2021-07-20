@@ -2,7 +2,7 @@ import telebot, requests, os, glob, req
 from PIL import Image
 from telebot import types
 from utils.logger import traceError
-from flask import Flask, request
+from flask import Flask, request, json
 
 last_cancel_menu = None # Сообщение с кнопкой отмены
 main_keyboard = None
@@ -218,14 +218,14 @@ def getAdminCommand(message):
   
 @server.route('/setip', methods=['POST'])
 def setIp ():
-  json_string = request.get_data().decode('utf-8')
-  req.updateIp(json_string)
+  json_string = json.loads(request.get_data().decode('utf-8'))
+  req.updateIp(json_string['ip'])
   return '!', 200
 
 @server.route('/status', methods=['POST'])
 def updateStatusChannel():
   global channel_id
-  json_string = request.get_data().decode('utf-8')
+  json_string = json.loads(request.get_data().decode('utf-8'))
   bot.send_message(channel_id, json_string['status'])
   return '!', 200
 
