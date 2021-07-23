@@ -45,7 +45,7 @@ def InitDb ():
     
     if not check1:
       cursor.execute(requestdb.CREATE_TABLE_IP)
-      cursor.execute(requestdb.ADD_IP.format(os.environ.get('DESP_IP', '0.0.0.0')))
+      cursor.execute(requestdb.ADD_IP.format(os.environ.get('DEST_IP', '0.0.0.0')))
 
   except (Exception, Error) as e:
     print('POSTGRES:', e)
