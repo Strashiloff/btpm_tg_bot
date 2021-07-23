@@ -186,7 +186,7 @@ def deleteAdmin(id_admin, id_user):
     return 'Ошибка, id неверен.'
   
   try:
-    list_admins = db.deleteAdmin(id_admin)
+    list_admins = db.getListAdmins()
     
     if list_admins == False: 
       return 'Произошла ошибка.'
@@ -201,6 +201,8 @@ def deleteAdmin(id_admin, id_user):
       
     if find == None:
       return 'Такого администратора нет.'
+    
+    check = db.deleteAdmin(id_admin)
     
   except Exception as e:
     print(deleteAdmin, e)
