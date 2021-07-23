@@ -27,11 +27,11 @@ def InitDb ():
   try:
     conn = connectDb()
     cursor = conn.cursor()
-    cursor.execute(requestdb.SELECT_DB_NAMES)
-    data = cursor.fetchall()
-    check = checkExistDb(data)
-    if not check:
-      cursor.execute(requestdb.CREATE_DB_BOT)
+    # cursor.execute(requestdb.SELECT_DB_NAMES)
+    # data = cursor.fetchall()
+    # check = checkExistDb(data)
+    # if not check:
+    #   cursor.execute(requestdb.CREATE_DB_BOT)
 
     cursor.execute(requestdb.SELECT_TABLES_NAMES)
     listTb = cursor.fetchall()
