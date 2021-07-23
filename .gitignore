@@ -1,5 +1,6 @@
 .venv/
 .vscode/
 __pycache__/
+entity/
 server/__pycache__/
 api.py

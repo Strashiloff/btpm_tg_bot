@@ -1,4 +1,4 @@
-import telebot, requests, os, glob, req
+import telebot, requests, os, glob, req, services.db as db
 from PIL import Image
 from telebot import types
 from utils.logger import traceError
@@ -12,6 +12,7 @@ bot = telebot.TeleBot(API_TOKEN)
 server = Flask(__name__)
 channel_id_test = -1001205501799
 channel_id = -1001544057022
+check = db.InitDb()
  
 def removeImages():
   filelist = glob.glob(os.path.join(os.path.abspath('./stickers'), '*'))
@@ -46,8 +47,11 @@ def help_message(message):
 <code>BostonTeaParty-Alpha-bot</code> создан для целей самообразования и развлечения.
 
 <b>Основное назначение</b> бота - это вывод статуса сервера по майнкрафту для крутых ребят из Boston tea-party и дополнительно для конвертации стикеров из форматов ТГ в более унифицированные (анимированные стикеры конвертируются с визуальными деффектами из-за сторонней библиотеки)
+Также вы можете перслать боту сообщение от пользователя чтобы узнать базовую информацию о нём или сообщение канала (желательно только текстовое)
 
-По всем вопросам, предложениям и за получением ip сервера обращаться к @alexstrashiloff
+<a href="https://t.me/btpmbotchannel">Канал бота</a>
+
+По всем вопросам, предложениям и за получением ip сервера обращаться к <a href="tg://user?id=93812289">Alex</a>
 
 <b>Основые команды</b>:
 /start - запуск бота
@@ -56,6 +60,7 @@ def help_message(message):
 /server - вывода статуса сервера по майнкрафту
 /time - время работы сервера
 /keyboard - удалить кнопочную клавиатуру, вернуть её можно с помощью команды /start.
+/admin - панель администаротора
 """, parse_mode="HTML")
 
 @bot.message_handler(commands=['sticker'])
@@ -118,7 +123,7 @@ def adminCommand (message):
     last_cancel_menu = bot.send_message(message.chat.id, """Отправьте команду (<i>Ваш уровень доступа</i>: <b>{0}</b>)
 <code>command 'команда на сервер'</code> - выполнить команду на сервере майнкрафт (<i>уровень доступа</i> 1)
 <code>add 'id_user' 'username' 'rigth'</code> - добавить админа (rigth = [0-2]) (<i>уровень доступа</i> 2)
-<code>rewrite 'список администраторов'</code> - полностью перезаписать список администарторов (<i>уровень доступа</i> 2)
+<code>write 'список администраторов'</code> - добавить несколько администарторов (<i>уровень доступа</i> 2)
 <code>list</code> - список администраторов (<i>уровень доступа</i> 0)
 <code>delete 'id_user'</code> - удалить админа (<i>уровень доступа</i> 2)
 """.format(rights), parse_mode='HTML', reply_markup=keyboard)
@@ -144,8 +149,30 @@ def textMessage(message):
   elif message.text == 'Расписание':
     serverTime(message)
   else:
-    print(message.forward_from_chat)
+    user = message.forward_from
+    if user != None:
+      print(message.forward_from)
+      bot.send_message(message.chat.id, '''About user:
+id: {0}
+first_name: {1}
+last_name: {2}
+username: {3}
+language_code: {4}
+is_bot: {5}
+      '''.format(user.id, user.first_name, user.last_name, user.username, user.language_code, user.is_bot))
+  
+    chat = message.forward_from_chat
+    if chat != None:
+      print(message.forward_from_chat)
+      bot.send_message(message.chat.id, '''About channel:
+id: {0}
+username: {1}
+type: {2}
+invite_link: {3}
+title: {4}
+      '''.format(chat.id, chat.username, chat.type, chat.invite_link, chat.title))    
   #   bot.send_message(message.chat.id, 'Поговорить? Это не ко мне а к @alexstrashiloff')
+  
 def convertSticker (message):
   global last_cancel_menu
   if message.content_type == 'sticker':
@@ -208,7 +235,7 @@ def getAdminCommand(message):
     text = req.deleteAdmin(command[1], message.from_user.id)
     bot.send_message(message.chat.id, text)
     bot.edit_message_reply_markup(last_cancel_menu.chat.id, last_cancel_menu.message_id, reply_markup=None)
-  elif command[0] == 'rewrite':
+  elif command[0] == 'write':
     text = req.addAdminList(command[1], message.from_user.id)
     bot.send_message(message.chat.id, text)
     bot.edit_message_reply_markup(last_cancel_menu.chat.id, last_cancel_menu.message_id, reply_markup=None)

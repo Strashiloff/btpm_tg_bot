@@ -1,22 +1,19 @@
-import requests, os, json, utils.parser as parser
+import requests, os, json, utils.parser as parser, services.db as db
 from utils.logger import traceError
 from flask import jsonify
 from mcrcon import MCRcon, MCRconException
 
-ip='192.168.31.162'
 PASS_SERV = os.environ.get('RCON_PASS')
 mcron = None
 
 def updateIp(ip_new):
-  DEST_IP = os.environ.get('DEST_IP', '')
-  if(DEST_IP != ip_new):
-    os.environ.setdefault('DEST_IP', ip_new)
-    ip = ip_new
+  ip = db.getIp()
+  if(ip != ip_new):
+    check = db.updateIp(ip_new)
   
 def checkStatus (id_user):
-  global ip
   error, response = sendCommand()
-  DEST_IP = os.environ.get('DEST_IP', ip)
+  DEST_IP = db.getIp()
   rigth, level = checkAdminRigthts(id_user)
   text = ''
   
@@ -51,8 +48,7 @@ def renderIP (id_user, ip):
   return 'у вас не доступа к этой информации'
 
 def sendAdminCommand(command, id_user):
-  global ip
-  DEST_IP = os.environ.get('DEST_IP', ip)
+  DEST_IP = db.getIp()
   rigth, level = checkAdminRigthts(id_user)
   if level > 0:
     error, response = sendCommand(command)
@@ -67,9 +63,7 @@ def sendAdminCommand(command, id_user):
   return response
 
 def checkAdminRigthts(id_user):
-  target = os.path.abspath('.')  + '/stickers/admin.txt'
-  fileRigths = open(target, 'r')
-  strings = fileRigths.readlines()
+  strings = db.getListAdmins()
   for line in strings:
     words = line.split(' ')
     if int(words[0]) == int(id_user):
@@ -77,8 +71,8 @@ def checkAdminRigthts(id_user):
   return False, -1
 
 def sendCommand (command = 'list'):
-  global ip, PASS_SERV
-  IP_SERV = os.environ.get('DEST_IP', ip)
+  global PASS_SERV
+  IP_SERV = db.getIp()
   response = ''
   mcron = MCRcon(IP_SERV, PASS_SERV)
   try:
@@ -107,25 +101,30 @@ def setNewAdmin (string_admin, id_user):
     return resp
   
   try:
-    file_admin = open(target)
-    list_string = file_admin.readlines()
-    list_admins_new = list()
-    for line in list_string:
-      list_admins_new.append(line.replace('\n', '') + '\n')
-      str_row = line.split(' ')
-      if int(str_row[0]) == int(string_args[0]):
-        return '{0} уже является администратором.'.format(string_args[1])
-      
-    file_admin.close()
-    list_admins_new.append(string_admin)
-    file_admin = open(target, 'w')
-    file_admin.writelines(list_admins_new)
-    file_admin.close()
+    list_string = db.getListAdmins()
+    check = checkExistAdmin(list_string, string_admin)
+    if check != None:
+      return check
+    
+    new_admin_param = string_admin.split(' ')
+    check = db.addNewAdmin(new_admin_param[0], new_admin_param[1], new_admin_param[2])
+    
   except Exception as e:
     print(setNewAdmin, e)
     return 'Произошла ошибка.'
     
   return 'Новый администратор добавлен.'
+
+def checkExistAdmin (list_string, admins):
+  list_admins = admins.split('\n')
+  for admin in list_admins:
+    string_args = admin.split(' ')
+    for line in list_string:
+      str_row = line.split(' ')
+      if int(str_row[0]) == int(string_args[0]):
+        return '{0} (id:{1}) уже является администратором.'.format(string_args[1], string_args[0])
+      
+  return None
 
 def checkErrorAdmin(admins):
   arr_str = admins.split('\n')
@@ -149,11 +148,17 @@ def addAdminList (list_admins, id_user):
   if resp != None:
     return resp
   
-  target = os.path.abspath('.') + '/stickers/admin.txt'
+  list_string = db.getListAdmins()
+  check = checkExistAdmin(list_string, list_admins)
+  if check != None:
+    return check
+  
+  list_string_admins = list_admins.split('\n')
   try:
-    file_admin = open(target, 'w')
-    file_admin.writelines(list_admins)
-    file_admin.close()
+    for admin in list_string_admins:
+      param_admin = admin.split(' ')
+      check = db.addNewAdmin(param_admin[0], param_admin[1], param_admin[2])
+      
   except Exception as e:
     print(addAdminList, e)
     return 'Произошла ошибка.'
@@ -161,19 +166,17 @@ def addAdminList (list_admins, id_user):
   return 'Список администраторов обновлен.'
 
 def showListAdmins ():
-  target = os.path.abspath('.') + '/stickers/admin.txt'
   try:
-    file_admins = open(target)
-    list_admins = file_admins.readlines()
-    file_admins.close()
+    list_admins = db.getListAdmins()
   except Exception as e:
     print(showListAdmins, e)
     return 'Произошла ошибка.'
+  if (list_admins == False):
+    return 'Произошла ошибка.'
+  
   return ''.join(list_admins)
 
 def deleteAdmin(id_admin, id_user):
-  target = os.path.abspath('.') + '/stickers/admin.txt'
-  
   rights, level = checkAdminRigthts(id_user)
   
   if (level < 2):
@@ -181,10 +184,13 @@ def deleteAdmin(id_admin, id_user):
   
   if not id_admin.isdigit():
     return 'Ошибка, id неверен.'
+  
   try:
-    file_admins = open(target)
-    list_admins = file_admins.readlines()
-    file_admins.close()
+    list_admins = db.deleteAdmin(id_admin)
+    
+    if list_admins == False: 
+      return 'Произошла ошибка.'
+    
     find = None
     for line in list_admins:
       line_text = line.split(' ')
@@ -196,10 +202,6 @@ def deleteAdmin(id_admin, id_user):
     if find == None:
       return 'Такого администратора нет.'
     
-    list_admins.remove(find)
-    file_admins = open(target, 'w')
-    file_admins.writelines(list_admins)
-    file_admins.close()
   except Exception as e:
     print(deleteAdmin, e)
     return 'Произошла ошибка.'
